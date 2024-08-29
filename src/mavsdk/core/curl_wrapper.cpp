@@ -79,7 +79,7 @@ static int download_progress_update(
         return myp->progress_callback(0, HttpStatus::Idle, CURLcode::CURLE_OK);
     }
 
-    int percentage = static_cast<int>(100 / dltotal * dlnow);
+    int percentage = static_cast<int>(100 * dlnow / dltotal );
 
     if (percentage > myp->progress_in_percentage) {
         myp->progress_in_percentage = percentage;

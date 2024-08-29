@@ -1,4 +1,4 @@
-#include "mavsdk.h"
+include "mavsdk.h"
 #include "plugins/camera/camera.h"
 #include "plugins/camera_server/camera_server.h"
 #include "log.h"
