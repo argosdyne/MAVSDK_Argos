@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     auto system = fut.get();
 
     // Instantiate plugins.
-    auto telemetry = Telemetry{system};
+    //auto telemetry = Telemetry{system};
     auto camera = Camera{system};
 
     // First, make sure camera is in photo mode.
