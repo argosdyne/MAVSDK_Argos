@@ -22,7 +22,10 @@ public:
     bool set_from_mavlink_param_set_bytewise(const mavlink_param_set_t& mavlink_set);
     bool set_from_mavlink_param_ext_set(const mavlink_param_ext_set_t& mavlink_ext_set);
     bool set_from_mavlink_param_ext_value(const mavlink_param_ext_value_t& mavlink_ext_value);
+    bool set_from_mavlink_param_ext_ack(const mavlink_param_ext_ack_t& mavlink_ext_ack);
     bool set_from_xml(const std::string& type_str, const std::string& value_str);
+    bool set_to_min_from_xml_type(const std::string& type_str);
+    bool set_to_max_from_xml_type(const std::string& type_str);
     bool set_empty_type_from_xml(const std::string& type_str);
     enum class Conversion { Cast, Bitwise };
     bool set_from_mavlink_param_value(
@@ -39,6 +42,9 @@ public:
     [[nodiscard]] std::optional<int> get_int() const;
     [[nodiscard]] std::optional<float> get_float() const;
     [[nodiscard]] std::optional<std::string> get_custom() const;
+
+    [[nodiscard]] std::optional<int64_t> get_int64() const;
+    [[nodiscard]] std::optional<double> get_double() const;
 
     bool set_int(int new_value);
     void set_float(float new_value);
@@ -110,7 +116,7 @@ public:
     {
         // Returns true if this parameter needs the extended parameters' protocol
         // which is the case when its value is represented by a string or bigger than 4 bytes.
-        return is<std::string>() || is<uint64_t>() || is<int64_t>() || is<double>();
+        return !is<float>() && !is<int32_t>() && !is<uint32_t>();
     }
 
 private:

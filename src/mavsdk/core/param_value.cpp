@@ -1,9 +1,16 @@
 #include "param_value.h"
 
 #include <cassert>
+#include <limits>
 
 namespace mavsdk {
 
+size_t strrnlenn(const char *s, size_t maxlen) {
+    while (maxlen > 0 && s[maxlen - 1] == '\0') {
+        maxlen--;
+    }
+    return maxlen;
+}
 // std::to_string doesn't work for std::string, so we need this workaround.
 template<typename T> std::string to_string(T&& value)
 {
@@ -182,7 +189,7 @@ bool ParamValue::set_from_mavlink_param_ext_set(const mavlink_param_ext_set_t& m
         } break;
         case MAV_PARAM_EXT_TYPE_CUSTOM: {
             std::size_t len = std::min(std::size_t(128), strlen(mavlink_ext_set.param_value));
-            _value = std::string(mavlink_ext_set.param_value, mavlink_ext_set.param_value + len);
+            _value = std::string(mavlink_ext_set.param_value, len);
         } break;
         default:
             // This would be worrying
@@ -249,9 +256,77 @@ bool ParamValue::set_from_mavlink_param_ext_value(
             _value = temp;
         } break;
         case MAV_PARAM_EXT_TYPE_CUSTOM: {
-            std::size_t len = strnlen(mavlink_ext_value.param_value, 128);
+            std::size_t len = strrnlenn(mavlink_ext_value.param_value, 128);
             _value =
-                std::string(mavlink_ext_value.param_value, mavlink_ext_value.param_value + len);
+                std::string(mavlink_ext_value.param_value, len);
+        } break;
+        default:
+            // This would be worrying
+            LogErr() << "Error: unknown mavlink ext param type";
+            assert(false);
+            return false;
+    }
+    return true;
+}
+
+bool ParamValue::set_from_mavlink_param_ext_ack(
+    const mavlink_param_ext_ack_t& mavlink_ext_ack)
+{
+    switch (mavlink_ext_ack.param_type) {
+        case MAV_PARAM_EXT_TYPE_UINT8: {
+            uint8_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_INT8: {
+            int8_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_UINT16: {
+            uint16_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_INT16: {
+            int16_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_UINT32: {
+            uint32_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_INT32: {
+            int32_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_UINT64: {
+            uint64_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_INT64: {
+            int64_t temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_REAL32: {
+            float temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_REAL64: {
+            double temp;
+            memcpy(&temp, &mavlink_ext_ack.param_value[0], sizeof(temp));
+            _value = temp;
+        } break;
+        case MAV_PARAM_EXT_TYPE_CUSTOM: {
+            std::size_t len = strrnlenn(mavlink_ext_ack.param_value, 128);
+            _value =
+                std::string(mavlink_ext_ack.param_value, len);
         } break;
         default:
             // This would be worrying
@@ -287,12 +362,75 @@ bool ParamValue::set_from_xml(const std::string& type_str, const std::string& va
         _value = static_cast<float>(std::stof(value_str));
     } else if (type_str == "double") {
         _value = static_cast<double>(std::stod(value_str));
+    } else if (type_str == "string") {
+        _value = value_str;
+    } else if (type_str == "custom") {
+        _value = value_str;
     } else {
         LogErr() << "Unknown type: " << type_str;
         return false;
     }
     return true;
 }
+
+bool ParamValue::set_to_min_from_xml_type(const std::string& type_str)
+{
+    if (strcmp(type_str.c_str(), "uint8") == 0 || strcmp(type_str.c_str(), "bool") == 0) {
+        _value = std::numeric_limits<uint8_t>::min();
+    } else if (strcmp(type_str.c_str(), "int8") == 0) {
+        _value = std::numeric_limits<int8_t>::min();
+    } else if (strcmp(type_str.c_str(), "uint16") == 0) {
+        _value = std::numeric_limits<uint16_t>::min();
+    } else if (strcmp(type_str.c_str(), "int16") == 0) {
+        _value = std::numeric_limits<int16_t>::min();
+    } else if (strcmp(type_str.c_str(), "uint32") == 0) {
+        _value = std::numeric_limits<uint32_t>::min();
+    } else if (strcmp(type_str.c_str(), "int32") == 0) {
+        _value = std::numeric_limits<int32_t>::min();
+    } else if (strcmp(type_str.c_str(), "uint64") == 0) {
+        _value = std::numeric_limits<uint64_t>::min();
+    } else if (strcmp(type_str.c_str(), "int64") == 0) {
+        _value = std::numeric_limits<int64_t>::min();
+    } else if (strcmp(type_str.c_str(), "float") == 0) {
+        _value = std::numeric_limits<float>::lowest();
+    } else if (strcmp(type_str.c_str(), "double") == 0) {
+        _value = std::numeric_limits<double>::lowest();
+    } else {
+        LogErr() << "Unknown type: " << type_str;
+        return false;
+    }
+    return true;
+}
+
+bool ParamValue::set_to_max_from_xml_type(const std::string& type_str)
+{
+    if (strcmp(type_str.c_str(), "uint8") == 0 || strcmp(type_str.c_str(), "bool") == 0) {
+        _value = std::numeric_limits<uint8_t>::max();
+    } else if (strcmp(type_str.c_str(), "int8") == 0) {
+        _value = std::numeric_limits<int8_t>::max();
+    } else if (strcmp(type_str.c_str(), "uint16") == 0) {
+        _value = std::numeric_limits<uint16_t>::max();
+    } else if (strcmp(type_str.c_str(), "int16") == 0) {
+        _value = std::numeric_limits<int16_t>::max();
+    } else if (strcmp(type_str.c_str(), "uint32") == 0) {
+        _value = std::numeric_limits<uint32_t>::max();
+    } else if (strcmp(type_str.c_str(), "int32") == 0) {
+        _value = std::numeric_limits<int32_t>::max();
+    } else if (strcmp(type_str.c_str(), "uint64") == 0) {
+        _value = std::numeric_limits<uint64_t>::max();
+    } else if (strcmp(type_str.c_str(), "int64") == 0) {
+        _value = std::numeric_limits<int64_t>::max();
+    } else if (strcmp(type_str.c_str(), "float") == 0) {
+        _value = std::numeric_limits<float>::max();
+    } else if (strcmp(type_str.c_str(), "double") == 0) {
+        _value = std::numeric_limits<double>::max();
+    } else {
+        LogErr() << "Unknown type: " << type_str;
+        return false;
+    }
+    return true;
+}
+
 
 bool ParamValue::set_empty_type_from_xml(const std::string& type_str)
 {
@@ -318,6 +456,10 @@ bool ParamValue::set_empty_type_from_xml(const std::string& type_str)
         _value = 0.0f;
     } else if (type_str == "double") {
         _value = 0.0;
+    } else if(type_str == "string") {
+        _value = "";
+    } else if(type_str == "custom") {
+        _value = "";
     } else {
         LogErr() << "Unknown type: " << type_str;
         return false;
@@ -407,6 +549,8 @@ bool ParamValue::set_as_same_type(const std::string& value_str)
         _value = float(std::stof(value_str));
     } else if (std::get_if<double>(&_value)) {
         _value = double(std::stod(value_str));
+    } else if (std::get_if<std::string>(&_value)) {
+        _value = value_str;
     } else {
         LogErr() << "Unknown type";
         return false;
@@ -420,6 +564,8 @@ bool ParamValue::set_as_same_type(const std::string& value_str)
         return std::get<float>(_value);
     } else if (std::get_if<int32_t>(&_value)) {
         return *(reinterpret_cast<const float*>(&std::get<int32_t>(_value)));
+    } else if (std::get_if<uint32_t>(&_value)) {
+        return *(reinterpret_cast<const float*>(&std::get<uint32_t>(_value)));
     } else {
         LogErr() << "Unknown type";
         assert(false);
@@ -470,6 +616,30 @@ bool ParamValue::set_as_same_type(const std::string& value_str)
     }
 }
 
+[[nodiscard]] std::optional<int64_t> ParamValue::get_int64() const
+{
+    if (std::get_if<uint64_t>(&_value)) {
+        return static_cast<int64_t>(std::get<uint64_t>(_value));
+    } else if (std::get_if<int64_t>(&_value)) {
+        return static_cast<int64_t>(std::get<int64_t>(_value));
+    } else if (std::get_if<uint32_t>(&_value)) {
+        return static_cast<int64_t>(std::get<uint32_t>(_value));
+    } else if (std::get_if<int32_t>(&_value)) {
+        return static_cast<int64_t>(std::get<int32_t>(_value));
+    } else if (std::get_if<uint16_t>(&_value)) {
+        return static_cast<int64_t>(std::get<uint16_t>(_value));
+    } else if (std::get_if<int16_t>(&_value)) {
+        return static_cast<int64_t>(std::get<int16_t>(_value));
+    } else if (std::get_if<uint8_t>(&_value)) {
+        return static_cast<int64_t>(std::get<uint8_t>(_value));
+    } else if (std::get_if<int8_t>(&_value)) {
+        return static_cast<int64_t>(std::get<int8_t>(_value));
+    } else {
+        LogErr() << "Not int64_t type";
+        return {};
+    }
+}
+
 bool ParamValue::set_int(int new_value)
 {
     if (std::get_if<uint8_t>(&_value)) {
@@ -511,6 +681,18 @@ void ParamValue::set_custom(const std::string& new_value)
         return std::get<float>(_value);
     } else {
         LogErr() << "Not float type";
+        return {};
+    }
+}
+
+[[nodiscard]] std::optional<double> ParamValue::get_double() const
+{
+    if (std::get_if<double>(&_value)) {
+        return std::get<double>(_value);
+    } else if (std::get_if<float>(&_value)) {
+        return static_cast<double>(std::get<float>(_value));
+    } else {
+        LogErr() << "Not double type";
         return {};
     }
 }
@@ -609,6 +791,8 @@ bool ParamValue::operator==(const std::string& value_str) const
         return std::get<float>(_value) == std::stof(value_str);
     } else if (std::get_if<double>(&_value)) {
         return std::get<double>(_value) == std::stod(value_str);
+    } else if (std::get_if<std::string>(&_value)) {
+        return std::get<std::string>(_value) == value_str;
     } else {
         // This also covers custom_type_t
         return false;
